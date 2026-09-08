@@ -11,8 +11,8 @@ const LIBRARY_URL = 'items-data.json';
 // ---------------------------------------------------------------------
 const translations = {
   en: {
-    pageTitle: 'Arena Breakout Loot Tracker',
-    brand: 'ARENA LOOT TRACKER',
+    pageTitle: 'BORHANE / WADIE TOOL',
+    brand: 'BORHANE / WADIE TOOL',
     addItem: 'Add Item',
     searchPlaceholder: 'Search items...',
     allGrids: 'All Grid Sizes',
@@ -50,8 +50,8 @@ const translations = {
     slots: 'slots'
   },
   ar: {
-    pageTitle: 'متتبع غنائم Arena Breakout',
-    brand: 'متتبع الغنائم',
+    pageTitle: 'BORHANE / WADIE TOOL',
+    brand: 'BORHANE / WADIE TOOL',
     addItem: 'إضافة عنصر',
     searchPlaceholder: 'ابحث عن عنصر...',
     allGrids: 'كل أحجام الشبكة',
@@ -117,6 +117,56 @@ const itemModal = new bootstrap.Modal(itemModalEl);
 const deleteModal = new bootstrap.Modal(deleteModalEl);
 const toastEl = el('mainToast');
 const toast = new bootstrap.Toast(toastEl, { delay: 2600 });
+const topLoadingBar = el('topLoadingBar');
+
+// ---------------------------------------------------------------------
+// Global "top bar" loading indicator — fills while a save/edit/delete
+// request is in flight, so the user gets visible feedback instead of
+// tapping the button repeatedly on a slow connection.
+// ---------------------------------------------------------------------
+let activeRequests = 0;
+function startLoading() {
+  activeRequests++;
+  if (activeRequests > 1) return;
+  topLoadingBar.classList.add('is-active');
+  topLoadingBar.style.transition = 'none';
+  topLoadingBar.style.width = '0%';
+  // Force reflow so the transition below actually animates from 0%.
+  void topLoadingBar.offsetWidth;
+  topLoadingBar.style.transition = 'width 8s cubic-bezier(0.12, 0.6, 0.2, 1)';
+  topLoadingBar.style.width = '88%';
+  // Also briefly ignore clicks on item cards while something is in flight,
+  // so a user can't fire off a second edit/delete before the first lands.
+  itemsContainer.classList.add('is-busy');
+}
+function stopLoading() {
+  activeRequests = Math.max(0, activeRequests - 1);
+  if (activeRequests > 0) return;
+  itemsContainer.classList.remove('is-busy');
+  topLoadingBar.style.transition = 'width 0.25s ease-out';
+  topLoadingBar.style.width = '100%';
+  setTimeout(() => {
+    topLoadingBar.classList.remove('is-active');
+    topLoadingBar.style.transition = 'none';
+    topLoadingBar.style.width = '0%';
+  }, 300);
+}
+
+// Disables a button and swaps its label for a small spinner + text while
+// an async action runs, so a slow request can't be triggered twice by
+// repeated taps. Always restores the button afterward, even on error.
+async function withButtonLoading(btn, loadingLabel, fn) {
+  const originalHtml = btn.innerHTML;
+  const originalDisabled = btn.disabled;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${loadingLabel}`;
+  try {
+    return await fn();
+  } finally {
+    btn.disabled = originalDisabled;
+    btn.innerHTML = originalHtml;
+  }
+}
 
 // ---------------------------------------------------------------------
 // i18n
@@ -178,6 +228,7 @@ function showToast(message) {
 // API calls
 // ---------------------------------------------------------------------
 async function fetchItems() {
+  startLoading();
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error('Failed to load items');
@@ -186,6 +237,8 @@ async function fetchItems() {
   } catch (err) {
     console.error(err);
     showToast(t('errorMsg'));
+  } finally {
+    stopLoading();
   }
 }
 
@@ -422,7 +475,12 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-  const item = items.find((i) => i.id === id);
+  // Compare loosely by numeric value: depending on how the database driver
+  // serializes the id column, item.id and the id read off the button's
+  // data-id attribute aren't always the exact same JS type, and `===` on
+  // mismatched types (e.g. a string vs a number) silently fails, which is
+  // why Edit could do nothing when clicked.
+  const item = items.find((i) => Number(i.id) === Number(id));
   if (!item) return;
   resetForm();
   editingId = id;
@@ -462,14 +520,18 @@ itemForm.addEventListener('submit', async (e) => {
 
   if (!payload.name) return;
 
+  const saveBtn = itemForm.querySelector('button[type="submit"]');
+  startLoading();
   try {
-    await saveItem(payload, editingId);
+    await withButtonLoading(saveBtn, t('save'), () => saveItem(payload, editingId));
     itemModal.hide();
     showToast(editingId ? t('updatedMsg') : t('addedMsg'));
     await fetchItems();
   } catch (err) {
     console.error(err);
     showToast(t('errorMsg'));
+  } finally {
+    stopLoading();
   }
 });
 
@@ -483,8 +545,10 @@ function openDeleteModal(id) {
 
 el('confirmDeleteBtn').addEventListener('click', async () => {
   if (!pendingDeleteId) return;
+  const btn = el('confirmDeleteBtn');
+  startLoading();
   try {
-    await deleteItemRequest(pendingDeleteId);
+    await withButtonLoading(btn, t('delete'), () => deleteItemRequest(pendingDeleteId));
     deleteModal.hide();
     showToast(t('deletedMsg'));
     await fetchItems();
@@ -492,6 +556,7 @@ el('confirmDeleteBtn').addEventListener('click', async () => {
     console.error(err);
     showToast(t('errorMsg'));
   } finally {
+    stopLoading();
     pendingDeleteId = null;
   }
 });

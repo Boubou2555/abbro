@@ -1,38 +1,68 @@
+/* =====================================================================
+   BORHANE / WADIE TOOL — iOS-style light theme with glassmorphism
+   Palette: iOS Blue / Green / Red on a soft frosted-white background.
+   ===================================================================== */
+
 :root {
-  --bg-main: #121212;
-  --bg-card: #1e1e1e;
-  --bg-panel: #191919;
-  --accent-gold: #ffb400;
-  --accent-purple: #a335ee;
-  --accent-blue: #0070dd;
-  --text-main: #f0f0f0;
-  --text-muted: #9a9a9a;
-  --border-subtle: #2c2c2c;
+  --ios-blue: #0A84FF;
+  --ios-blue-deep: #0060df;
+  --ios-green: #30D158;
+  --ios-green-deep: #1fa63f;
+  --ios-red: #FF453A;
+  --ios-red-deep: #d93a30;
+  --accent-gold: #FFB400;
+  --accent-purple: #AF52DE;
+
+  --bg-app: #eef2f7;
+  --text-main: #1c1c1e;
+  --text-muted: #6e6e73;
+  --border-subtle: rgba(60, 60, 67, 0.13);
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 65, 0.12);
 }
 
 /* ---------- Base / Typography ---------- */
 html, body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
   min-height: 100%;
+  background-color: var(--bg-app);
+  color: var(--text-main);
 }
 
 body {
-  font-family: 'Rajdhani', sans-serif;
-  letter-spacing: 0.02em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0;
+  position: relative;
+  overflow-x: hidden;
 }
 
 body.lang-ar {
-  font-family: 'Tajawal', 'Cairo', sans-serif;
-  letter-spacing: normal;
+  font-family: 'Tajawal', 'Cairo', -apple-system, sans-serif;
+}
+
+/* Soft blurred color blobs behind everything — the "glass over color" iOS look */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 12% 8%,  rgba(10, 132, 255, 0.35) 0%, rgba(10, 132, 255, 0) 40%),
+    radial-gradient(circle at 88% 15%, rgba(48, 209, 88, 0.30) 0%, rgba(48, 209, 88, 0) 42%),
+    radial-gradient(circle at 50% 95%, rgba(255, 69, 58, 0.22) 0%, rgba(255, 69, 58, 0) 45%),
+    var(--bg-app);
+  filter: blur(40px);
 }
 
 .brand-logo,
 h1, h2, h3, h4, h5,
 .modal-title,
 .navbar-brand {
-  font-family: 'Orbitron', 'Rajdhani', sans-serif;
-  letter-spacing: 0.03em;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 body.lang-ar .brand-logo,
@@ -42,74 +72,203 @@ body.lang-ar .modal-title {
   letter-spacing: normal;
 }
 
+/* ---------- Top loading bar ---------- */
+.top-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  z-index: 2000;
+  background: linear-gradient(90deg, var(--ios-blue), var(--ios-green), var(--ios-red));
+  opacity: 0;
+  box-shadow: 0 0 8px rgba(10, 132, 255, 0.6);
+}
+.top-loading-bar.is-active { opacity: 1; }
+
+/* While a request is in flight, dim card action buttons slightly and
+   ignore further clicks on them so people can't double-fire requests. */
+#itemsContainer.is-busy .item-actions { pointer-events: none; opacity: 0.5; }
+
+/* ---------- Glass helper ---------- */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
 /* ---------- Navbar ---------- */
 .tactical-navbar {
-  background: linear-gradient(90deg, #0d0d0d 0%, #1a1a1a 100%);
-  border-bottom: 2px solid var(--accent-gold);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
 }
 
 .brand-logo {
-  color: var(--accent-gold) !important;
-  font-weight: 700;
-  font-size: 1.15rem;
+  color: var(--text-main) !important;
+  font-weight: 800;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-logo i {
+  background: linear-gradient(135deg, var(--ios-blue), var(--ios-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 1.4rem;
 }
 
 .lang-toggle {
-  font-family: 'Rajdhani', 'Cairo', sans-serif;
   font-weight: 700;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
 }
+
+/* ---------- Buttons: iOS pill style ---------- */
+.btn {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.btn-success {
+  background-color: var(--ios-green);
+  border-color: var(--ios-green);
+}
+.btn-success:hover, .btn-success:active, .btn-success:focus {
+  background-color: var(--ios-green-deep) !important;
+  border-color: var(--ios-green-deep) !important;
+}
+
+.btn-primary, .btn-outline-primary.active {
+  background-color: var(--ios-blue);
+  border-color: var(--ios-blue);
+}
+.btn-outline-primary {
+  color: var(--ios-blue);
+  border-color: var(--ios-blue);
+}
+.btn-outline-primary:hover {
+  background-color: var(--ios-blue);
+  border-color: var(--ios-blue);
+}
+
+.btn-danger {
+  background-color: var(--ios-red);
+  border-color: var(--ios-red);
+}
+.btn-danger:hover, .btn-danger:active, .btn-danger:focus {
+  background-color: var(--ios-red-deep) !important;
+  border-color: var(--ios-red-deep) !important;
+}
+
+.btn-outline-danger {
+  color: var(--ios-red);
+  border-color: rgba(255, 69, 58, 0.4);
+}
+.btn-outline-danger:hover {
+  background-color: var(--ios-red);
+  border-color: var(--ios-red);
+}
+
+.btn-outline-light {
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+  background: rgba(255, 255, 255, 0.5);
+}
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+
+.btn-secondary {
+  background-color: rgba(120, 120, 128, 0.16);
+  border-color: transparent;
+  color: var(--text-main);
+}
+.btn-secondary:hover {
+  background-color: rgba(120, 120, 128, 0.28);
+  color: var(--text-main);
+}
+
+.btn-outline-secondary {
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.spinner-border-sm { vertical-align: -0.1em; }
 
 /* ---------- Panels ---------- */
 .toolbar-panel {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
 }
 
 .summary-bar {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 0.7rem 1.1rem;
+  box-shadow: var(--glass-shadow);
 }
 
 .form-control, .form-select, .input-group-text {
-  background-color: #262626;
-  border: 1px solid #3a3a3a;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-subtle);
   color: var(--text-main);
+  border-radius: 14px;
 }
+
+.input-group-text { border-radius: 14px 0 0 14px; }
+.input-group .form-control { border-radius: 0 14px 14px 0; }
 
 .form-control:focus, .form-select:focus {
-  background-color: #262626;
+  background-color: rgba(255, 255, 255, 0.95);
   color: var(--text-main);
-  border-color: var(--accent-gold);
-  box-shadow: 0 0 0 0.2rem rgba(255, 180, 0, 0.25);
+  border-color: var(--ios-blue);
+  box-shadow: 0 0 0 0.2rem rgba(10, 132, 255, 0.2);
 }
 
-.form-control::placeholder { color: #7c7c7c; }
+.form-control::placeholder { color: #9a9aa0; }
 
 /* ---------- Item Cards ---------- */
 .item-card {
-  background-color: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  border-top: 4px solid var(--accent-blue);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  border-top: 4px solid var(--ios-blue);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
   overflow: hidden;
   height: 100%;
+  box-shadow: var(--glass-shadow);
 }
 
 .item-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 14px 30px rgba(31, 38, 65, 0.18);
 }
 
 .item-card.rarity-gold { border-top-color: var(--accent-gold); }
 .item-card.rarity-purple { border-top-color: var(--accent-purple); }
-.item-card.rarity-blue { border-top-color: var(--accent-blue); }
+.item-card.rarity-blue { border-top-color: var(--ios-blue); }
 
 .item-card .card-img-wrap {
-  background-color: #101010;
+  background-color: rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,6 +290,7 @@ body.lang-ar .modal-title {
   font-weight: 700;
   font-size: 1.05rem;
   margin-bottom: 0.15rem;
+  color: var(--text-main);
 }
 
 .item-name-ar {
@@ -142,29 +302,33 @@ body.lang-ar .modal-title {
 
 .badge-rarity-gold { background-color: var(--accent-gold); color: #1e1e1e; }
 .badge-rarity-purple { background-color: var(--accent-purple); color: #fff; }
-.badge-rarity-blue { background-color: var(--accent-blue); color: #fff; }
+.badge-rarity-blue { background-color: var(--ios-blue); color: #fff; }
 
 .badge-grid {
-  background-color: #333;
-  color: #eee;
-  border: 1px solid #4a4a4a;
+  background-color: rgba(120, 120, 128, 0.16);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
 }
 
 .item-price {
-  color: var(--accent-gold);
-  font-weight: 700;
+  color: var(--ios-green-deep);
+  font-weight: 800;
   font-size: 1.1rem;
 }
 
 .item-actions .btn {
-  padding: 0.25rem 0.55rem;
+  padding: 0.3rem 0.6rem;
 }
 
 /* ---------- Modal ---------- */
 .tactical-modal {
-  background-color: var(--bg-card);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   color: var(--text-main);
-  border: 1px solid var(--accent-gold);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(31, 38, 65, 0.25);
 }
 
 .modal-header, .modal-footer {
@@ -175,12 +339,12 @@ body.lang-ar .modal-title {
   width: 72px;
   height: 72px;
   object-fit: contain;
-  background-color: #101010;
-  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
   border: 1px solid var(--border-subtle);
 }
 
-.rarity-btn { font-weight: 700; }
+.rarity-btn { font-weight: 700; border-radius: 999px !important; }
 .btn-outline-purple {
   color: var(--accent-purple);
   border-color: var(--accent-purple);
@@ -188,6 +352,35 @@ body.lang-ar .modal-title {
 .btn-outline-purple:hover, .btn-check:checked + .btn-outline-purple {
   background-color: var(--accent-purple);
   color: #fff;
+}
+.btn-outline-warning {
+  color: #b5810a;
+  border-color: var(--accent-gold);
+}
+.btn-check:checked + .btn-outline-warning {
+  background-color: var(--accent-gold);
+  color: #1e1e1e;
+}
+.btn-check:checked + .btn-outline-info {
+  background-color: var(--ios-blue);
+  color: #fff;
+  border-color: var(--ios-blue);
+}
+.btn-outline-info { color: var(--ios-blue); border-color: var(--ios-blue); }
+
+/* Bootstrap radio group: keep only the outer edges rounded for the pill group */
+.btn-group.w-100 .rarity-btn:first-child { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.btn-group.w-100 .rarity-btn:last-child { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+
+/* ---------- Toast ---------- */
+.glass-toast {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  color: var(--text-main);
+  box-shadow: var(--glass-shadow);
 }
 
 /* ---------- Autocomplete ---------- */
@@ -198,36 +391,39 @@ body.lang-ar .modal-title {
   inset-inline: 0;
   max-height: 260px;
   overflow-y: auto;
-  background-color: #1a1a1a;
-  border: 1px solid var(--accent-gold);
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 12px 28px rgba(31, 38, 65, 0.2);
 }
 
 .autocomplete-item {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.85rem;
   cursor: pointer;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .autocomplete-item:hover, .autocomplete-item.active {
-  background-color: #2a2a2a;
+  background-color: rgba(10, 132, 255, 0.1);
 }
 
 .autocomplete-item img {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  background: #101010;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
 }
 
 .autocomplete-item .ac-name {
   flex-grow: 1;
   font-size: 0.92rem;
+  color: var(--text-main);
 }
 
 .autocomplete-item .ac-name-ar {
@@ -253,7 +449,10 @@ html[dir="rtl"] .item-actions {
 }
 
 html[dir="rtl"] .input-group > .input-group-text {
-  border-radius: 0 0.375rem 0.375rem 0;
+  border-radius: 0 14px 14px 0;
+}
+html[dir="rtl"] .input-group .form-control {
+  border-radius: 14px 0 0 14px;
 }
 
 html[dir="rtl"] .toast-container {
@@ -263,8 +462,8 @@ html[dir="rtl"] .toast-container {
 
 /* ---------- Misc ---------- */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
-::-webkit-scrollbar-track { background: #1a1a1a; }
+::-webkit-scrollbar-thumb { background: rgba(120,120,128,0.35); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 
 @media (max-width: 576px) {
   .brand-logo span { font-size: 0.85rem; }
