@@ -1,0 +1,272 @@
+:root {
+  --bg-main: #121212;
+  --bg-card: #1e1e1e;
+  --bg-panel: #191919;
+  --accent-gold: #ffb400;
+  --accent-purple: #a335ee;
+  --accent-blue: #0070dd;
+  --text-main: #f0f0f0;
+  --text-muted: #9a9a9a;
+  --border-subtle: #2c2c2c;
+}
+
+/* ---------- Base / Typography ---------- */
+html, body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+body.lang-ar {
+  font-family: 'Tajawal', 'Cairo', sans-serif;
+  letter-spacing: normal;
+}
+
+.brand-logo,
+h1, h2, h3, h4, h5,
+.modal-title,
+.navbar-brand {
+  font-family: 'Orbitron', 'Rajdhani', sans-serif;
+  letter-spacing: 0.03em;
+}
+
+body.lang-ar .brand-logo,
+body.lang-ar h1, body.lang-ar h2, body.lang-ar h3, body.lang-ar h4, body.lang-ar h5,
+body.lang-ar .modal-title {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  letter-spacing: normal;
+}
+
+/* ---------- Navbar ---------- */
+.tactical-navbar {
+  background: linear-gradient(90deg, #0d0d0d 0%, #1a1a1a 100%);
+  border-bottom: 2px solid var(--accent-gold);
+}
+
+.brand-logo {
+  color: var(--accent-gold) !important;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.lang-toggle {
+  font-family: 'Rajdhani', 'Cairo', sans-serif;
+  font-weight: 700;
+}
+
+/* ---------- Panels ---------- */
+.toolbar-panel {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.summary-bar {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+}
+
+.form-control, .form-select, .input-group-text {
+  background-color: #262626;
+  border: 1px solid #3a3a3a;
+  color: var(--text-main);
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: #262626;
+  color: var(--text-main);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 0.2rem rgba(255, 180, 0, 0.25);
+}
+
+.form-control::placeholder { color: #7c7c7c; }
+
+/* ---------- Item Cards ---------- */
+.item-card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-top: 4px solid var(--accent-blue);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  height: 100%;
+}
+
+.item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.item-card.rarity-gold { border-top-color: var(--accent-gold); }
+.item-card.rarity-purple { border-top-color: var(--accent-purple); }
+.item-card.rarity-blue { border-top-color: var(--accent-blue); }
+
+.item-card .card-img-wrap {
+  background-color: #101010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  height: 130px;
+}
+
+.item-card img {
+  max-height: 100px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.item-card .card-body {
+  padding: 0.9rem 1rem;
+}
+
+.item-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.15rem;
+}
+
+.item-name-ar {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.badge-rarity-gold { background-color: var(--accent-gold); color: #1e1e1e; }
+.badge-rarity-purple { background-color: var(--accent-purple); color: #fff; }
+.badge-rarity-blue { background-color: var(--accent-blue); color: #fff; }
+
+.badge-grid {
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #4a4a4a;
+}
+
+.item-price {
+  color: var(--accent-gold);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.item-actions .btn {
+  padding: 0.25rem 0.55rem;
+}
+
+/* ---------- Modal ---------- */
+.tactical-modal {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--accent-gold);
+}
+
+.modal-header, .modal-footer {
+  border-color: var(--border-subtle);
+}
+
+.image-preview {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  background-color: #101010;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.rarity-btn { font-weight: 700; }
+.btn-outline-purple {
+  color: var(--accent-purple);
+  border-color: var(--accent-purple);
+}
+.btn-outline-purple:hover, .btn-check:checked + .btn-outline-purple {
+  background-color: var(--accent-purple);
+  color: #fff;
+}
+
+/* ---------- Autocomplete ---------- */
+.autocomplete-list {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  inset-inline: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  background-color: #1a1a1a;
+  border: 1px solid var(--accent-gold);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.autocomplete-item:hover, .autocomplete-item.active {
+  background-color: #2a2a2a;
+}
+
+.autocomplete-item img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  background: #101010;
+  border-radius: 4px;
+}
+
+.autocomplete-item .ac-name {
+  flex-grow: 1;
+  font-size: 0.92rem;
+}
+
+.autocomplete-item .ac-name-ar {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+}
+
+.autocomplete-empty {
+  padding: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ---------- RTL adjustments ---------- */
+html[dir="rtl"] .autocomplete-list {
+  text-align: right;
+}
+
+html[dir="rtl"] .item-actions {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .input-group > .input-group-text {
+  border-radius: 0 0.375rem 0.375rem 0;
+}
+
+html[dir="rtl"] .toast-container {
+  right: auto !important;
+  left: 0 !important;
+}
+
+/* ---------- Misc ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+::-webkit-scrollbar-track { background: #1a1a1a; }
+
+@media (max-width: 576px) {
+  .brand-logo span { font-size: 0.85rem; }
+  .item-card .card-img-wrap { height: 100px; }
+}

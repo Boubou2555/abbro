@@ -1,0 +1,30 @@
+[
+  { "name": "Gold Bar", "name_ar": "سبيكة ذهب", "category": "valuables", "rarity": "gold", "grid_size": 1, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=GB" },
+  { "name": "Diamond", "name_ar": "ألماسة", "category": "valuables", "rarity": "gold", "grid_size": 1, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=DM" },
+  { "name": "Gold Watch", "name_ar": "ساعة ذهبية", "category": "valuables", "rarity": "gold", "grid_size": 1, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=GW" },
+  { "name": "Antique Vase", "name_ar": "مزهرية أثرية", "category": "valuables", "rarity": "gold", "grid_size": 4, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=AV" },
+  { "name": "Graphics Card", "name_ar": "كرت شاشة", "category": "valuables", "rarity": "purple", "grid_size": 2, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=GPU" },
+  { "name": "Laptop", "name_ar": "لابتوب", "category": "valuables", "rarity": "purple", "grid_size": 4, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=LP" },
+  { "name": "Camera", "name_ar": "كاميرا", "category": "valuables", "rarity": "purple", "grid_size": 2, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=CAM" },
+  { "name": "Silver Bar", "name_ar": "سبيكة فضة", "category": "valuables", "rarity": "purple", "grid_size": 1, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=SB" },
+  { "name": "Tools Kit", "name_ar": "طقم أدوات", "category": "valuables", "rarity": "blue", "grid_size": 2, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=TK" },
+  { "name": "Scrap Metal", "name_ar": "خردة معدن", "category": "valuables", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=SM" },
+  { "name": "Copper Wire", "name_ar": "سلك نحاس", "category": "valuables", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=CW" },
+
+  { "name": "Warehouse Master Key", "name_ar": "مفتاح المستودع الرئيسي", "category": "keys", "rarity": "gold", "grid_size": 1, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=KEY" },
+  { "name": "Armory Key", "name_ar": "مفتاح المستودع العسكري", "category": "keys", "rarity": "gold", "grid_size": 1, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=KEY" },
+  { "name": "Office Key", "name_ar": "مفتاح المكتب", "category": "keys", "rarity": "purple", "grid_size": 1, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=KEY" },
+  { "name": "Dorm Room Key", "name_ar": "مفتاح غرفة السكن", "category": "keys", "rarity": "purple", "grid_size": 1, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=KEY" },
+  { "name": "Storage Key", "name_ar": "مفتاح التخزين", "category": "keys", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=KEY" },
+
+  { "name": "7.62 AP Ammo", "name_ar": "ذخيرة 7.62 خارقة", "category": "ammo", "rarity": "gold", "grid_size": 1, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=AMMO" },
+  { "name": "5.56 API Ammo", "name_ar": "ذخيرة 5.56 حارقة", "category": "ammo", "rarity": "purple", "grid_size": 1, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=AMMO" },
+  { "name": "9mm FMJ Ammo", "name_ar": "ذخيرة 9mm", "category": "ammo", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=AMMO" },
+  { "name": "12 Gauge Buckshot", "name_ar": "خرطوش عيار 12", "category": "ammo", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=AMMO" },
+
+  { "name": "Surgery Kit", "name_ar": "طقم جراحة", "category": "medical", "rarity": "gold", "grid_size": 4, "image_url": "https://placehold.co/128x128/ffb400/1e1e1e?text=MED" },
+  { "name": "IFAK Medkit", "name_ar": "حقيبة إسعافات IFAK", "category": "medical", "rarity": "purple", "grid_size": 2, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=MED" },
+  { "name": "Morphine Injector", "name_ar": "حقنة مورفين", "category": "medical", "rarity": "purple", "grid_size": 1, "image_url": "https://placehold.co/128x128/a335ee/ffffff?text=MED" },
+  { "name": "Bandage", "name_ar": "ضمادة", "category": "medical", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=MED" },
+  { "name": "Painkillers", "name_ar": "مسكنات ألم", "category": "medical", "rarity": "blue", "grid_size": 1, "image_url": "https://placehold.co/128x128/0070dd/ffffff?text=MED" }
+]
