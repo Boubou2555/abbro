@@ -1,0 +1,21 @@
+{
+  "name": "arena-breakout-tracker",
+  "version": "2.0.0",
+  "description": "Full-stack bilingual (AR/EN) loot & resource tracker for Arena Breakout — shared Turso database, deployable to Netlify (serverless) or any Node host",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.x"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "serverless-http": "^3.2.0"
+  },
+  "license": "MIT"
+}
