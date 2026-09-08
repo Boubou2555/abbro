@@ -31,6 +31,7 @@ const translations = {
     itemNameArPlaceholder: 'Arabic name (optional)',
     imageUrl: 'Image URL',
     imageUrlPlaceholder: 'https://...',
+    uploadImage: 'Or upload a photo from your device',
     price: 'Price (Koen)',
     gridSize: 'Grid / Slots',
     rarity: 'Rarity',
@@ -69,6 +70,7 @@ const translations = {
     itemNameArPlaceholder: 'الاسم بالعربي (اختياري)',
     imageUrl: 'رابط الصورة',
     imageUrlPlaceholder: 'https://...',
+    uploadImage: 'أو ارفع صورة من جهازك',
     price: 'السعر (كوين)',
     gridSize: 'حجم الشبكة / الخانات',
     rarity: 'الندرة',
@@ -339,10 +341,62 @@ const itemForm = el('itemForm');
 const itemNameInput = el('itemNameInput');
 const itemNameArInput = el('itemNameArInput');
 const imageUrlInput = el('imageUrlInput');
+const imageFileInput = el('imageFileInput');
 const imagePreview = el('imagePreview');
 const priceInput = el('priceInput');
 const gridSizeInput = el('gridSizeInput');
 const autocompleteList = el('autocompleteList');
+
+// Holds a base64 data URL when the user picks a photo from their device.
+// Takes priority over imageUrlInput's value when saving, and is cleared
+// whenever the user types a URL instead.
+let uploadedImageData = null;
+
+// Reads an image file, downsizes it (so it doesn't bloat the database),
+// and resolves with a compact base64 JPEG data URL.
+function resizeImageFile(file, maxDim = 500, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Could not read that image.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Could not read that file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+imageFileInput.addEventListener('change', async () => {
+  const file = imageFileInput.files && imageFileInput.files[0];
+  if (!file) return;
+  try {
+    const dataUrl = await resizeImageFile(file);
+    uploadedImageData = dataUrl;
+    imageUrlInput.value = '';
+    imagePreview.src = dataUrl;
+  } catch (err) {
+    console.error(err);
+    showToast(t('errorMsg'));
+  }
+});
 
 el('openAddModalBtn').addEventListener('click', () => {
   openAddModal();
@@ -351,8 +405,10 @@ el('openAddModalBtn').addEventListener('click', () => {
 function resetForm() {
   editingId = null;
   selectedLibraryMatch = null;
+  uploadedImageData = null;
   el('itemId').value = '';
   itemForm.reset();
+  imageFileInput.value = '';
   imagePreview.src = 'https://placehold.co/80x80/2a2a2a/777?text=?';
   hideAutocomplete();
   document.querySelector('input[name="rarity"][value="purple"]').checked = true;
@@ -374,7 +430,9 @@ function openEditModal(id) {
   el('itemModalTitle').textContent = t('edit');
   itemNameInput.value = item.name;
   itemNameArInput.value = item.name_ar || '';
-  imageUrlInput.value = item.image_url || '';
+  const isDataImage = !!(item.image_url && item.image_url.startsWith('data:'));
+  imageUrlInput.value = isDataImage ? '' : (item.image_url || '');
+  uploadedImageData = isDataImage ? item.image_url : null;
   imagePreview.src = item.image_url || 'https://placehold.co/80x80/2a2a2a/777?text=?';
   priceInput.value = item.price;
   gridSizeInput.value = item.grid_size;
@@ -384,6 +442,8 @@ function openEditModal(id) {
 }
 
 imageUrlInput.addEventListener('input', () => {
+  uploadedImageData = null;
+  imageFileInput.value = '';
   imagePreview.src = imageUrlInput.value || 'https://placehold.co/80x80/2a2a2a/777?text=?';
 });
 
@@ -394,7 +454,7 @@ itemForm.addEventListener('submit', async (e) => {
   const payload = {
     name: itemNameInput.value.trim(),
     name_ar: itemNameArInput.value.trim() || null,
-    image_url: imageUrlInput.value.trim() || null,
+    image_url: uploadedImageData || imageUrlInput.value.trim() || null,
     price: Number(priceInput.value) || 0,
     grid_size: Number(gridSizeInput.value),
     rarity
