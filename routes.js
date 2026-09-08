@@ -76,8 +76,12 @@ router.post('/items', async (req, res) => {
   const { name, name_ar, image_url, price, grid_size, rarity } = req.body;
   try {
     const client = await getClient();
-    const insert = await client.execute({
-      sql: `INSERT INTO items (name, name_ar, image_url, price, grid_size, rarity) VALUES (?, ?, ?, ?, ?, ?)`,
+    // Single round-trip: INSERT ... RETURNING gives us the created row directly,
+    // instead of a separate INSERT + SELECT (this used to be 2 network calls
+    // to the remote Turso database; on a serverless function each round-trip
+    // adds real latency, which is what made Add/Edit/Delete feel slow).
+    const result = await client.execute({
+      sql: `INSERT INTO items (name, name_ar, image_url, price, grid_size, rarity) VALUES (?, ?, ?, ?, ?, ?) RETURNING *`,
       args: [
         name.trim(),
         name_ar ? String(name_ar).trim() : null,
@@ -87,9 +91,7 @@ router.post('/items', async (req, res) => {
         rarity
       ]
     });
-    const newId = Number(insert.lastInsertRowid);
-    const created = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [newId] });
-    res.status(201).json(created.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create item' });
@@ -100,30 +102,56 @@ router.post('/items', async (req, res) => {
 router.put('/items/:id', async (req, res) => {
   try {
     const client = await getClient();
+    const body = req.body || {};
+    const fieldKeys = ['name', 'name_ar', 'image_url', 'price', 'grid_size', 'rarity'];
+    const isFullUpdate = fieldKeys.every((k) => k in body);
+
+    // Fast path (this is what the app's own edit form always sends): every
+    // field is present, so we can UPDATE ... RETURNING * in a single
+    // round-trip instead of SELECT-then-UPDATE-then-SELECT (3 round-trips).
+    if (isFullUpdate) {
+      const errors = validatePayload(body);
+      if (errors.length) return res.status(400).json({ error: errors.join(', ') });
+      const { name, name_ar, image_url, price, grid_size, rarity } = body;
+      const result = await client.execute({
+        sql: `UPDATE items SET name=?, name_ar=?, image_url=?, price=?, grid_size=?, rarity=? WHERE id=? RETURNING *`,
+        args: [
+          name.trim(),
+          name_ar ? String(name_ar).trim() : null,
+          image_url ? String(image_url).trim() : null,
+          Number(price) || 0,
+          Number(grid_size),
+          rarity,
+          req.params.id
+        ]
+      });
+      if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
+      return res.json(result.rows[0]);
+    }
+
+    // Slow path: a genuine partial update (only some fields sent) still
+    // needs to read the existing row first so we know what to keep.
     const existingResult = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
     const existing = existingResult.rows[0];
     if (!existing) return res.status(404).json({ error: 'Item not found' });
 
-    const errors = validatePayload(req.body, { partial: true });
+    const errors = validatePayload(body, { partial: true });
     if (errors.length) return res.status(400).json({ error: errors.join(', ') });
 
-    const { name, name_ar, image_url, price, grid_size, rarity } = req.body;
     const merged = {
-      name: name !== undefined ? String(name).trim() : existing.name,
-      name_ar: name_ar !== undefined ? (name_ar ? String(name_ar).trim() : null) : existing.name_ar,
-      image_url: image_url !== undefined ? (image_url ? String(image_url).trim() : null) : existing.image_url,
-      price: price !== undefined ? Number(price) : existing.price,
-      grid_size: grid_size !== undefined ? Number(grid_size) : existing.grid_size,
-      rarity: rarity !== undefined ? rarity : existing.rarity
+      name: body.name !== undefined ? String(body.name).trim() : existing.name,
+      name_ar: body.name_ar !== undefined ? (body.name_ar ? String(body.name_ar).trim() : null) : existing.name_ar,
+      image_url: body.image_url !== undefined ? (body.image_url ? String(body.image_url).trim() : null) : existing.image_url,
+      price: body.price !== undefined ? Number(body.price) : existing.price,
+      grid_size: body.grid_size !== undefined ? Number(body.grid_size) : existing.grid_size,
+      rarity: body.rarity !== undefined ? body.rarity : existing.rarity
     };
 
-    await client.execute({
-      sql: `UPDATE items SET name=?, name_ar=?, image_url=?, price=?, grid_size=?, rarity=? WHERE id=?`,
+    const updateResult = await client.execute({
+      sql: `UPDATE items SET name=?, name_ar=?, image_url=?, price=?, grid_size=?, rarity=? WHERE id=? RETURNING *`,
       args: [merged.name, merged.name_ar, merged.image_url, merged.price, merged.grid_size, merged.rarity, req.params.id]
     });
-
-    const updatedResult = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
-    res.json(updatedResult.rows[0]);
+    res.json(updateResult.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update item' });
@@ -134,10 +162,9 @@ router.put('/items/:id', async (req, res) => {
 router.delete('/items/:id', async (req, res) => {
   try {
     const client = await getClient();
-    const existingResult = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
-    if (!existingResult.rows.length) return res.status(404).json({ error: 'Item not found' });
-
-    await client.execute({ sql: 'DELETE FROM items WHERE id = ?', args: [req.params.id] });
+    // Single round-trip DELETE ... RETURNING, instead of SELECT-to-check + DELETE.
+    const result = await client.execute({ sql: 'DELETE FROM items WHERE id = ? RETURNING id', args: [req.params.id] });
+    if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
     res.json({ success: true, id: Number(req.params.id) });
   } catch (err) {
     console.error(err);
