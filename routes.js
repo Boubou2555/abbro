@@ -46,7 +46,8 @@ function validatePayload(body, { partial = false } = {}) {
 // GET all items
 router.get('/items', async (req, res) => {
   try {
-    const result = await getClient().execute('SELECT * FROM items ORDER BY created_at DESC, id DESC');
+    const client = await getClient();
+    const result = await client.execute('SELECT * FROM items ORDER BY created_at DESC, id DESC');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -57,7 +58,8 @@ router.get('/items', async (req, res) => {
 // GET single item
 router.get('/items/:id', async (req, res) => {
   try {
-    const result = await getClient().execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
+    const client = await getClient();
+    const result = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
     if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -73,7 +75,8 @@ router.post('/items', async (req, res) => {
 
   const { name, name_ar, image_url, price, grid_size, rarity } = req.body;
   try {
-    const insert = await getClient().execute({
+    const client = await getClient();
+    const insert = await client.execute({
       sql: `INSERT INTO items (name, name_ar, image_url, price, grid_size, rarity) VALUES (?, ?, ?, ?, ?, ?)`,
       args: [
         name.trim(),
@@ -85,7 +88,7 @@ router.post('/items', async (req, res) => {
       ]
     });
     const newId = Number(insert.lastInsertRowid);
-    const created = await getClient().execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [newId] });
+    const created = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [newId] });
     res.status(201).json(created.rows[0]);
   } catch (err) {
     console.error(err);
@@ -96,7 +99,8 @@ router.post('/items', async (req, res) => {
 // UPDATE item
 router.put('/items/:id', async (req, res) => {
   try {
-    const existingResult = await getClient().execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
+    const client = await getClient();
+    const existingResult = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
     const existing = existingResult.rows[0];
     if (!existing) return res.status(404).json({ error: 'Item not found' });
 
@@ -113,12 +117,12 @@ router.put('/items/:id', async (req, res) => {
       rarity: rarity !== undefined ? rarity : existing.rarity
     };
 
-    await getClient().execute({
+    await client.execute({
       sql: `UPDATE items SET name=?, name_ar=?, image_url=?, price=?, grid_size=?, rarity=? WHERE id=?`,
       args: [merged.name, merged.name_ar, merged.image_url, merged.price, merged.grid_size, merged.rarity, req.params.id]
     });
 
-    const updatedResult = await getClient().execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
+    const updatedResult = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
     res.json(updatedResult.rows[0]);
   } catch (err) {
     console.error(err);
@@ -129,10 +133,11 @@ router.put('/items/:id', async (req, res) => {
 // DELETE item
 router.delete('/items/:id', async (req, res) => {
   try {
-    const existingResult = await getClient().execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
+    const client = await getClient();
+    const existingResult = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
     if (!existingResult.rows.length) return res.status(404).json({ error: 'Item not found' });
 
-    await getClient().execute({ sql: 'DELETE FROM items WHERE id = ?', args: [req.params.id] });
+    await client.execute({ sql: 'DELETE FROM items WHERE id = ?', args: [req.params.id] });
     res.json({ success: true, id: Number(req.params.id) });
   } catch (err) {
     console.error(err);
