@@ -16,6 +16,20 @@ const VALID_GRID_SIZES = [1, 2, 4, 6];
 const VALID_RARITIES = ['gold', 'purple', 'blue'];
 
 // Make sure the table exists before handling any request
+// Some SQLite/libSQL driver configurations can return integer columns as
+// BigInt or string instead of a plain Number. The frontend compares ids with
+// Number(...), so normalizing here guarantees ids always round-trip as
+// ordinary numbers — this is what edit/delete depend on to find the right row.
+function normalizeRow(row) {
+  if (!row) return row;
+  const out = { ...row };
+  if (out.id !== undefined) out.id = Number(out.id);
+  return out;
+}
+function normalizeRows(rows) {
+  return (rows || []).map(normalizeRow);
+}
+
 router.use(async (req, res, next) => {
   try {
     await initDb();
@@ -48,7 +62,7 @@ router.get('/items', async (req, res) => {
   try {
     const client = await getClient();
     const result = await client.execute('SELECT * FROM items ORDER BY created_at DESC, id DESC');
-    res.json(result.rows);
+    res.json(normalizeRows(result.rows));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch items' });
@@ -61,7 +75,7 @@ router.get('/items/:id', async (req, res) => {
     const client = await getClient();
     const result = await client.execute({ sql: 'SELECT * FROM items WHERE id = ?', args: [req.params.id] });
     if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
-    res.json(result.rows[0]);
+    res.json(normalizeRow(result.rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch item' });
@@ -91,7 +105,7 @@ router.post('/items', async (req, res) => {
         rarity
       ]
     });
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(normalizeRow(result.rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create item' });
@@ -126,7 +140,7 @@ router.put('/items/:id', async (req, res) => {
         ]
       });
       if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
-      return res.json(result.rows[0]);
+      return res.json(normalizeRow(result.rows[0]));
     }
 
     // Slow path: a genuine partial update (only some fields sent) still
@@ -151,7 +165,7 @@ router.put('/items/:id', async (req, res) => {
       sql: `UPDATE items SET name=?, name_ar=?, image_url=?, price=?, grid_size=?, rarity=? WHERE id=? RETURNING *`,
       args: [merged.name, merged.name_ar, merged.image_url, merged.price, merged.grid_size, merged.rarity, req.params.id]
     });
-    res.json(updateResult.rows[0]);
+    res.json(normalizeRow(updateResult.rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update item' });
