@@ -259,49 +259,38 @@ body.lang-ar .modal-title {
 
 .form-control::placeholder { color: #9a9aa0; }
 
-/* ---------- Items list (scrollable) ---------- */
-.items-scroll {
-  max-height: calc(100vh - 260px);
-  min-height: 220px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 4px 6px 4px 2px;
-  margin: 0 -6px;
-  scroll-behavior: smooth;
-  overscroll-behavior: contain;
-}
-
+/* ---------- Items list (compact, grouped, native page scroll) ---------- */
 .items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
 }
 
 @keyframes itemRowIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .item-row {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  border-inline-start: 4px solid var(--ios-blue);
-  box-shadow: var(--glass-shadow);
-  padding: 0.6rem 0.9rem;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-  animation: itemRowIn 0.32s ease both;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+  border-inline-start: 3px solid var(--ios-blue);
+  transition: background-color 0.15s ease;
+  animation: itemRowIn 0.2s ease both;
 }
 
-.item-row:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(31, 38, 65, 0.16);
-  background: var(--glass-bg-strong);
+.items-list .item-row:last-child { border-bottom: none; }
+
+.item-row:hover,
+.item-row:active {
+  background-color: rgba(10, 132, 255, 0.06);
 }
 
 .item-row.rarity-gold { border-inline-start-color: var(--accent-gold); }
@@ -310,10 +299,10 @@ body.lang-ar .modal-title {
 
 .item-row-img {
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
+  width: 42px;
+  height: 42px;
   background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -331,21 +320,23 @@ body.lang-ar .modal-title {
   min-width: 0;
 }
 
-.item-row-badges { margin-top: 0.25rem; }
+.item-row-badges { margin-top: 0.15rem; }
+.item-row-badges .badge { font-size: 0.68rem; padding: 0.28em 0.55em; }
 
 .item-row-price {
   flex: 0 0 auto;
   text-align: end;
   white-space: nowrap;
-  padding-inline: 0.5rem;
+  padding-inline: 0.35rem;
+  font-size: 0.92rem;
 }
 
-.item-row-price small { display: block; }
+.item-row-price small { font-size: 0.72rem; display: block; }
 
 .item-name {
-  font-weight: 700;
-  font-size: 1rem;
-  margin-bottom: 0.1rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 0.05rem;
   color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -355,16 +346,19 @@ body.lang-ar .modal-title {
 .item-name-ar {
   font-family: 'Cairo', 'Tajawal', sans-serif;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.item-actions .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 576px) {
-  .item-row { flex-wrap: wrap; }
-  .item-row-price { order: 3; flex: 1 0 auto; text-align: start; padding-inline: 0; margin-top: 0.35rem; }
-  .item-actions { order: 4; margin-inline-start: auto; }
+  .item-row-badges .badge:last-child { display: none; }
 }
 
 .badge-rarity-gold { background-color: var(--accent-gold); color: #1e1e1e; }
