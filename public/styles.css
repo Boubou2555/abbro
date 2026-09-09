@@ -25,10 +25,20 @@
 }
 
 /* ---------- Base / Typography ---------- */
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   min-height: 100%;
   background-color: var(--bg-app);
   color: var(--text-main);
+}
+
+/* Smoother, more "native app" feel: momentum scrolling on iOS/Safari,
+   and every element animates its own properties instead of snapping. */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -135,6 +145,11 @@ body.lang-ar .modal-title {
 .btn {
   border-radius: 999px;
   font-weight: 600;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.96);
 }
 
 .btn-success {
@@ -244,60 +259,112 @@ body.lang-ar .modal-title {
 
 .form-control::placeholder { color: #9a9aa0; }
 
-/* ---------- Item Cards ---------- */
-.item-card {
+/* ---------- Items list (scrollable) ---------- */
+.items-scroll {
+  max-height: calc(100vh - 260px);
+  min-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 6px 4px 2px;
+  margin: 0 -6px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+@keyframes itemRowIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
   background: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 20px;
+  border-radius: 16px;
   border: 1px solid var(--glass-border);
-  border-top: 4px solid var(--ios-blue);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-  overflow: hidden;
-  height: 100%;
+  border-inline-start: 4px solid var(--ios-blue);
   box-shadow: var(--glass-shadow);
+  padding: 0.6rem 0.9rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  animation: itemRowIn 0.32s ease both;
 }
 
-.item-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(31, 38, 65, 0.18);
+.item-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(31, 38, 65, 0.16);
+  background: var(--glass-bg-strong);
 }
 
-.item-card.rarity-gold { border-top-color: var(--accent-gold); }
-.item-card.rarity-purple { border-top-color: var(--accent-purple); }
-.item-card.rarity-blue { border-top-color: var(--ios-blue); }
+.item-row.rarity-gold { border-inline-start-color: var(--accent-gold); }
+.item-row.rarity-purple { border-inline-start-color: var(--accent-purple); }
+.item-row.rarity-blue { border-inline-start-color: var(--ios-blue); }
 
-.item-card .card-img-wrap {
+.item-row-img {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
   background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  height: 130px;
+  overflow: hidden;
 }
 
-.item-card img {
-  max-height: 100px;
+.item-row-img img {
   max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
-.item-card .card-body {
-  padding: 0.9rem 1rem;
+.item-row-info {
+  flex: 1 1 auto;
+  min-width: 0;
 }
+
+.item-row-badges { margin-top: 0.25rem; }
+
+.item-row-price {
+  flex: 0 0 auto;
+  text-align: end;
+  white-space: nowrap;
+  padding-inline: 0.5rem;
+}
+
+.item-row-price small { display: block; }
 
 .item-name {
   font-weight: 700;
-  font-size: 1.05rem;
-  margin-bottom: 0.15rem;
+  font-size: 1rem;
+  margin-bottom: 0.1rem;
   color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-name-ar {
   font-family: 'Cairo', 'Tajawal', sans-serif;
   color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  .item-row { flex-wrap: wrap; }
+  .item-row-price { order: 3; flex: 1 0 auto; text-align: start; padding-inline: 0; margin-top: 0.35rem; }
+  .item-actions { order: 4; margin-inline-start: auto; }
 }
 
 .badge-rarity-gold { background-color: var(--accent-gold); color: #1e1e1e; }
@@ -467,5 +534,5 @@ html[dir="rtl"] .toast-container {
 
 @media (max-width: 576px) {
   .brand-logo span { font-size: 0.85rem; }
-  .item-card .card-img-wrap { height: 100px; }
+  .item-row-img { width: 48px; height: 48px; }
 }

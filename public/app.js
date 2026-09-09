@@ -302,42 +302,48 @@ function renderItems() {
   const total = filtered.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
   el('totalValueLabel').textContent = formatPrice(total);
 
-  filtered.forEach((item) => {
-    const col = document.createElement('div');
-    col.className = 'col-6 col-md-4 col-lg-3';
+  filtered.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = `item-row rarity-${item.rarity}`;
+    // Small staggered delay so the list "settles in" smoothly instead of
+    // popping in all at once — capped so long lists don't feel sluggish.
+    row.style.animationDelay = `${Math.min(idx, 12) * 25}ms`;
 
     const displayName = item.name;
     const displayNameAr = item.name_ar;
+    // Guard against a malformed/missing id from the API — without this an
+    // edit/delete click on such a row would silently fail (Edit) or send a
+    // request to a bad URL (Delete), which looks exactly like "doesn't work".
+    const safeId = item.id ?? item.ID ?? item.Id;
 
-    col.innerHTML = `
-      <div class="item-card rarity-${item.rarity}">
-        <div class="card-img-wrap">
-          <img src="${escapeHtml(item.image_url || 'https://placehold.co/128x128/2a2a2a/777?text=?')}"
-               alt="${escapeHtml(displayName)}"
-               onerror="this.src='https://placehold.co/128x128/2a2a2a/777?text=?'">
-        </div>
-        <div class="card-body">
-          <div class="item-name">${escapeHtml(displayName)}</div>
-          ${displayNameAr ? `<div class="item-name-ar">${escapeHtml(displayNameAr)}</div>` : ''}
-          <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-            <span class="badge badge-rarity-${item.rarity}">${t('rarity' + capitalize(item.rarity))}</span>
-            <span class="badge badge-grid">${item.grid_size} ${t('slots')}</span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center">
-            <span class="item-price">${formatPrice(item.price)} <small class="text-muted">${t('koen')}</small></span>
-            <div class="item-actions d-flex gap-1">
-              <button class="btn btn-sm btn-outline-light" data-action="edit" data-id="${item.id}" title="${t('edit')}">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" title="${t('delete')}">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </div>
+    row.innerHTML = `
+      <div class="item-row-img">
+        <img src="${escapeHtml(item.image_url || 'https://placehold.co/128x128/2a2a2a/777?text=?')}"
+             alt="${escapeHtml(displayName)}"
+             onerror="this.src='https://placehold.co/128x128/2a2a2a/777?text=?'">
+      </div>
+      <div class="item-row-info">
+        <div class="item-name">${escapeHtml(displayName)}</div>
+        ${displayNameAr ? `<div class="item-name-ar">${escapeHtml(displayNameAr)}</div>` : ''}
+        <div class="d-flex align-items-center gap-2 flex-wrap item-row-badges">
+          <span class="badge badge-rarity-${item.rarity}">${t('rarity' + capitalize(item.rarity))}</span>
+          <span class="badge badge-grid">${item.grid_size} ${t('slots')}</span>
         </div>
       </div>
+      <div class="item-row-price">
+        <span class="item-price">${formatPrice(item.price)}</span>
+        <small class="text-muted">${t('koen')}</small>
+      </div>
+      <div class="item-actions d-flex gap-1">
+        <button class="btn btn-sm btn-outline-light" data-action="edit" data-id="${safeId}" title="${t('edit')}">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${safeId}" title="${t('delete')}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
     `;
-    itemsContainer.appendChild(col);
+    itemsContainer.appendChild(row);
   });
 }
 
@@ -380,8 +386,17 @@ el('clearFiltersBtn').addEventListener('click', () => {
 itemsContainer.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
-  const id = Number(btn.getAttribute('data-id'));
+  const rawId = btn.getAttribute('data-id');
+  const id = Number(rawId);
   const action = btn.getAttribute('data-action');
+
+  if (!rawId || Number.isNaN(id)) {
+    // Should not normally happen, but surface it instead of doing nothing —
+    // silent failure is what makes a bug like this look like "edit does nothing".
+    console.error('Item row has an invalid id, cannot edit/delete:', rawId);
+    showToast(t('errorMsg'));
+    return;
+  }
 
   if (action === 'edit') openEditModal(id);
   if (action === 'delete') openDeleteModal(id);
