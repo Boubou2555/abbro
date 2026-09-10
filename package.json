@@ -1,7 +1,7 @@
 {
-  "name": "arena-breakout-tracker",
-  "version": "2.0.0",
-  "description": "Full-stack bilingual (AR/EN) loot & resource tracker for Arena Breakout — shared Turso database, deployable to Netlify (serverless) or any Node host",
+  "name": "game-accounts-store",
+  "version": "3.0.0",
+  "description": "Storefront for selling game accounts (gems / gold bars, image, price in USD / Flexy DZD / BaridiMob DZD, unique code per account) with a password-protected admin panel — shared Turso database, deployable to Netlify (serverless), Vercel, or any Node host",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

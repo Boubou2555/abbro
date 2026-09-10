@@ -1,13 +1,13 @@
 /**
- * Arena Breakout Loot Tracker — local dev / traditional Node hosting entry point.
+ * Game Accounts Store — local dev / traditional Node hosting entry point.
  *
  * Uses the same routes.js + db.js (Turso/libSQL) as the Netlify function, so
  * local dev, Render, a VPS, etc. all read and write the exact same shared
  * cloud database as the deployed Netlify site.
  *
- * Requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN — put them in a local
- * .env file (see .env.example) for local runs; on a host like Render, set
- * them as environment variables in the dashboard instead.
+ * Requires TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, and ADMIN_PASSWORD — put
+ * them in a local .env file (see README.md) for local runs; on a host like
+ * Render, set them as environment variables in the dashboard instead.
  */
 
 require('dotenv').config();
@@ -32,8 +32,11 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🎯 Arena Breakout Tracker running at http://localhost:${PORT}`);
+  console.log(`🎮 Game Accounts Store running at http://localhost:${PORT}`);
   console.log(process.env.TURSO_DATABASE_URL
     ? '📦 Connected to Turso database'
-    : '⚠️  TURSO_DATABASE_URL not set — see .env.example / README.md');
+    : '⚠️  TURSO_DATABASE_URL not set — see README.md');
+  console.log(process.env.ADMIN_PASSWORD
+    ? '🔐 Admin panel password is set'
+    : '⚠️  ADMIN_PASSWORD not set — /admin.html will not work until it is set (see README.md)');
 });

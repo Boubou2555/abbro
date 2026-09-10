@@ -17,7 +17,7 @@
  * is exactly what this project uses (a hosted Turso database), so there is
  * no functional trade-off here.
  *
- * Requires two environment variables (see .env.example / README.md):
+ * Requires two environment variables (see README.md):
  *   TURSO_DATABASE_URL
  *   TURSO_AUTH_TOKEN
  */
@@ -43,22 +43,47 @@ async function getClient() {
   return clientPromise;
 }
 
+// Accounts table: each row is one game account for sale.
+//   code            — short unique reference code shown to the buyer, so
+//                      they can tell the seller which account they want
+//                      without needing an account/login system on the site.
+//   gems            — عدد الجواهر
+//   gold_bars       — عدد الشظايا الذهبية
+//   image_url       — صورة الإكستريم (or any cover image), URL or base64 data URL
+//   price_usd       — السعر بالدولار
+//   price_flexy     — السعر بالدينار الجزائري (فليكسي)
+//   price_baridimob — السعر بالدينار الجزائري (BaridiMob)
+//   status          — 'available' | 'sold'
 async function initDb() {
   if (!initPromise) {
-    initPromise = getClient().then((client) =>
-      client.execute(`
-        CREATE TABLE IF NOT EXISTS items (
+    initPromise = getClient().then(async (client) => {
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS accounts (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          name_ar TEXT,
+          code TEXT NOT NULL UNIQUE,
+          title TEXT,
+          gems INTEGER NOT NULL DEFAULT 0,
+          gold_bars INTEGER NOT NULL DEFAULT 0,
           image_url TEXT,
-          price INTEGER DEFAULT 0,
-          grid_size INTEGER NOT NULL DEFAULT 1,
-          rarity TEXT NOT NULL DEFAULT 'blue',
+          price_usd REAL NOT NULL DEFAULT 0,
+          price_flexy REAL NOT NULL DEFAULT 0,
+          price_baridimob REAL NOT NULL DEFAULT 0,
+          note TEXT,
+          status TEXT NOT NULL DEFAULT 'available',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-      `)
-    );
+      `);
+      // Best-effort migration for older databases created before a column
+      // existed. Each ALTER is wrapped so an "already exists" error from a
+      // database that already has the column never blocks startup.
+      const migrations = [
+        `ALTER TABLE accounts ADD COLUMN title TEXT`,
+        `ALTER TABLE accounts ADD COLUMN note TEXT`
+      ];
+      for (const sql of migrations) {
+        try { await client.execute(sql); } catch (_) { /* column already exists */ }
+      }
+    });
   }
   return initPromise;
 }
