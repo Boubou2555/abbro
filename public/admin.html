@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم — متجر الحسابات</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&family=Tajawal:wght@500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="topLoadingBar" class="top-loading-bar"></div>
+
+<!-- Login gate -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon"><i class="bi bi-shield-lock"></i></div>
+    <h4 class="mb-3">دخول لوحة التحكم</h4>
+    <form id="loginForm">
+      <input type="password" id="loginPasswordInput" class="form-control mb-3" placeholder="كلمة المرور" required autocomplete="current-password">
+      <button type="submit" class="btn btn-success w-100 fw-bold">
+        <i class="bi bi-box-arrow-in-left"></i> دخول
+      </button>
+      <div id="loginError" class="text-danger small mt-2 d-none">كلمة المرور غير صحيحة.</div>
+    </form>
+    <a href="index.html" class="d-block text-center mt-3 small">&larr; العودة إلى المتجر</a>
+  </div>
+</div>
+
+<!-- Admin panel (hidden until login) -->
+<div id="adminPanel" class="d-none">
+
+  <nav class="navbar navbar-expand-lg tactical-navbar sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand brand-logo" href="#">
+        <i class="bi bi-shield-lock"></i>
+        <span>لوحة التحكم</span>
+      </a>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <a class="btn btn-outline-light btn-sm" href="index.html" target="_blank">
+          <i class="bi bi-shop"></i> عرض المتجر
+        </a>
+        <button class="btn btn-outline-danger btn-sm" id="logoutBtn" type="button">
+          <i class="bi bi-box-arrow-right"></i> خروج
+        </button>
+        <button class="btn btn-success btn-sm fw-bold" id="openAddModalBtn" type="button">
+          <i class="bi bi-plus-lg"></i> إضافة حساب
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid py-4 px-3 px-md-4">
+
+    <!-- Search by code -->
+    <div class="row g-2 mb-4 toolbar-panel p-3">
+      <div class="col-12 col-md-6">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+          <input type="text" id="codeSearchInput" class="form-control" placeholder="ابحث بالكود...">
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <select id="statusFilter" class="form-select">
+          <option value="all">كل الحالات</option>
+          <option value="available">متوفر</option>
+          <option value="sold">مباع</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3 d-grid">
+        <button id="clearAdminFiltersBtn" class="btn btn-outline-secondary btn-sm" type="button">
+          <i class="bi bi-x-circle"></i> مسح البحث
+        </button>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 summary-bar">
+      <span id="itemCountLabel" class="text-muted"></span>
+    </div>
+
+    <div id="accountsContainer" class="accounts-grid"></div>
+
+    <div id="emptyState" class="text-center text-muted py-5 d-none">
+      <i class="bi bi-inbox display-1 d-block mb-3"></i>
+      <p>لا توجد حسابات. ابدأ بإضافة أول حساب.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content tactical-modal">
+      <div class="modal-header">
+        <h5 class="modal-title" id="itemModalTitle">إضافة حساب</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="itemForm">
+        <div class="modal-body">
+          <input type="hidden" id="itemId">
+
+          <!-- Code (read-only, shown only when editing) -->
+          <div class="mb-3 d-none" id="codeFieldWrap">
+            <label class="form-label">كود الحساب</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="codeDisplay" readonly>
+              <button type="button" class="btn btn-outline-warning" id="regenerateCodeBtn" title="توليد كود جديد">
+                <i class="bi bi-arrow-repeat"></i>
+              </button>
+            </div>
+            <small class="text-muted">هذا الكود يظهر للزبون في المتجر لكي يرسله لك عند الشراء.</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">اسم / عنوان الحساب (اختياري)</label>
+            <input type="text" class="form-control" id="titleInput" placeholder="مثال: حساب رقم 1">
+          </div>
+
+          <div class="mb-3 d-flex align-items-center gap-3">
+            <img id="imagePreview" src="https://placehold.co/80x80/1a1a1a/777?text=?" class="image-preview" alt="preview">
+            <div class="flex-grow-1">
+              <label class="form-label">رابط صورة الإكستريم</label>
+              <input type="url" class="form-control" id="imageUrlInput" placeholder="https://...">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">أو ارفع صورة من جهازك</label>
+            <input type="file" accept="image/*" class="form-control" id="imageFileInput">
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label"><i class="bi bi-gem"></i> عدد الجواهر</label>
+              <input type="number" min="0" class="form-control" id="gemsInput" placeholder="0" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label"><i class="bi bi-coin"></i> عدد الشظايا الذهبية</label>
+              <input type="number" min="0" class="form-control" id="goldBarsInput" placeholder="0" required>
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <label class="form-label fw-bold">الأسعار</label>
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label small"><i class="bi bi-currency-dollar"></i> دولار (USD)</label>
+              <input type="number" min="0" step="0.01" class="form-control" id="priceUsdInput" placeholder="0">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small"><i class="bi bi-phone"></i> فليكسي (دج)</label>
+              <input type="number" min="0" step="1" class="form-control" id="priceFlexyInput" placeholder="0">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small"><i class="bi bi-bank"></i> بريدي موب (دج)</label>
+              <input type="number" min="0" step="1" class="form-control" id="priceBaridimobInput" placeholder="0">
+            </div>
+          </div>
+
+          <div class="mb-1 mt-3">
+            <label class="form-label">ملاحظات (اختياري)</label>
+            <textarea class="form-control" id="noteInput" rows="2" placeholder="أي تفاصيل إضافية عن الحساب..."></textarea>
+          </div>
+
+          <div class="mb-1 mt-3">
+            <label class="form-label d-block">الحالة</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="status" id="statusAvailable" value="available" autocomplete="off" checked>
+              <label class="btn btn-outline-success" for="statusAvailable">متوفر</label>
+
+              <input type="radio" class="btn-check" name="status" id="statusSold" value="sold" autocomplete="off">
+              <label class="btn btn-outline-danger" for="statusSold">مباع</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-success fw-bold">حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content tactical-modal">
+      <div class="modal-header">
+        <h5 class="modal-title">تأكيد الحذف</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">هل أنت متأكد أنك تريد حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">حذف</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast for feedback -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="mainToast" class="toast align-items-center border-0 glass-toast" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Done</div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
