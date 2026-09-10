@@ -83,6 +83,17 @@ async function initDb() {
       for (const sql of migrations) {
         try { await client.execute(sql); } catch (_) { /* column already exists */ }
       }
+
+      // Single-row table holding the (hashed) admin password. The password
+      // itself is generated randomly on first use and never stored in
+      // plaintext or in an environment variable — see routes.js.
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS admin_settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          password_hash TEXT NOT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
     });
   }
   return initPromise;

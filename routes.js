@@ -7,8 +7,14 @@
  * Public endpoints (no password needed):
  *   GET  /accounts            -> only accounts with status = "available"
  *
+ * Admin auth (no ADMIN_PASSWORD env var — password lives only, as a
+ * bcrypt hash, in the "admin_settings" table):
+ *   GET  /admin/setup-status              -> { configured: boolean }, public
+ *   POST /admin/setup                     -> generate + store the password (only works once), returns plaintext once
+ *   POST /admin/regenerate-password       -> requires current password, returns new plaintext once
+ *
  * Admin endpoints (require header "x-admin-password" to match the
- * ADMIN_PASSWORD environment variable):
+ * stored password):
  *   POST /admin/login                    -> { ok: true } if the password is correct
  *   GET  /admin/accounts                 -> every account, any status
  *   GET  /admin/accounts/search?code=..  -> accounts whose code contains the query
@@ -19,6 +25,8 @@
  */
 
 const express = require('express');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { getClient, initDb } = require('./db');
 
 const router = express.Router();
@@ -35,6 +43,46 @@ function generateRandomCode(length = 7) {
     out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
   }
   return out;
+}
+
+// ---------------------------------------------------------------------
+// Admin auth — the admin password is never chosen by hand and never
+// lives in an environment variable. It is generated randomly the first
+// time /admin/setup is called, hashed with bcrypt, and stored in the
+// "admin_settings" table. Only the hash is ever persisted; the plaintext
+// password is returned to the caller exactly once (at generation time)
+// and cannot be recovered afterwards — only regenerated.
+// ---------------------------------------------------------------------
+const PASSWORD_ALPHABET =
+  'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+
+function generateRandomPassword(length = 16) {
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += PASSWORD_ALPHABET[crypto.randomInt(PASSWORD_ALPHABET.length)];
+  }
+  return out;
+}
+
+async function getAdminPasswordHash(client) {
+  const result = await client.execute('SELECT password_hash FROM admin_settings WHERE id = 1');
+  return result.rows[0] ? result.rows[0].password_hash : null;
+}
+
+async function setAdminPasswordHash(client, hash) {
+  await client.execute({
+    sql: `INSERT INTO admin_settings (id, password_hash, updated_at)
+          VALUES (1, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(id) DO UPDATE SET password_hash = excluded.password_hash, updated_at = CURRENT_TIMESTAMP`,
+    args: [hash]
+  });
+}
+
+async function generateAndStoreAdminPassword(client) {
+  const plaintext = generateRandomPassword();
+  const hash = await bcrypt.hash(plaintext, 10);
+  await setAdminPasswordHash(client, hash);
+  return plaintext;
 }
 
 async function generateUniqueCode(client) {
@@ -80,21 +128,30 @@ router.use(async (req, res, next) => {
 });
 
 // ---------------------------------------------------------------------
-// Admin auth — simple shared-password check, stateless.
-// The admin frontend asks for the password once, keeps it in
-// localStorage, and sends it as a header on every admin request.
+// Admin auth — stateless shared-password check against the bcrypt hash
+// stored in the database (see admin_settings table above). The admin
+// frontend asks for the password once, keeps it in localStorage, and
+// sends it as a header on every admin request.
 // ---------------------------------------------------------------------
-function requireAdmin(req, res, next) {
-  if (!process.env.ADMIN_PASSWORD) {
-    return res.status(500).json({
-      error: 'ADMIN_PASSWORD is not set on the server. Set it as an environment variable (see README.md).'
-    });
+async function requireAdmin(req, res, next) {
+  try {
+    const client = await getClient();
+    const hash = await getAdminPasswordHash(client);
+    if (!hash) {
+      return res.status(412).json({
+        error: 'لم يتم إعداد كلمة مرور بعد. افتح /api/admin/setup لتوليد واحدة.',
+        code: 'ADMIN_NOT_CONFIGURED'
+      });
+    }
+    const supplied = req.headers['x-admin-password'];
+    if (!supplied || !(await bcrypt.compare(String(supplied), hash))) {
+      return res.status(401).json({ error: 'Invalid admin password' });
+    }
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Auth check failed' });
   }
-  const supplied = req.headers['x-admin-password'];
-  if (!supplied || supplied !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid admin password' });
-  }
-  next();
 }
 
 function validatePayload(body, { partial = false } = {}) {
@@ -131,15 +188,81 @@ router.get('/accounts', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
+// ADMIN: is a password configured yet? (public — lets the frontend decide
+// whether to show the first-time setup screen or the normal login form)
+// ---------------------------------------------------------------------
+router.get('/admin/setup-status', async (req, res) => {
+  try {
+    const client = await getClient();
+    const hash = await getAdminPasswordHash(client);
+    res.json({ configured: !!hash });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to check setup status' });
+  }
+});
+
+// ---------------------------------------------------------------------
+// ADMIN: first-time setup — generates a random password, stores only its
+// bcrypt hash, and returns the plaintext ONCE. Refuses if a password is
+// already configured (use /admin/regenerate-password instead, which
+// requires being logged in with the current password).
+// ---------------------------------------------------------------------
+router.post('/admin/setup', async (req, res) => {
+  try {
+    const client = await getClient();
+    const existing = await getAdminPasswordHash(client);
+    if (existing) {
+      return res.status(409).json({
+        error: 'تم إعداد كلمة مرور مسبقاً. سجل الدخول ثم استخدم "توليد كلمة مرور جديدة" إن أردت تغييرها.',
+        code: 'ALREADY_CONFIGURED'
+      });
+    }
+    const plaintext = await generateAndStoreAdminPassword(client);
+    res.status(201).json({ password: plaintext });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to generate admin password' });
+  }
+});
+
+// ---------------------------------------------------------------------
+// ADMIN: regenerate the password (must already be logged in with the
+// current one). Returns the new plaintext password ONCE.
+// ---------------------------------------------------------------------
+router.post('/admin/regenerate-password', requireAdmin, async (req, res) => {
+  try {
+    const client = await getClient();
+    const plaintext = await generateAndStoreAdminPassword(client);
+    res.json({ password: plaintext });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to regenerate admin password' });
+  }
+});
+
+// ---------------------------------------------------------------------
 // ADMIN: login check
 // ---------------------------------------------------------------------
-router.post('/admin/login', (req, res) => {
-  if (!process.env.ADMIN_PASSWORD) {
-    return res.status(500).json({ error: 'ADMIN_PASSWORD is not set on the server. Set it as an environment variable (see README.md).' });
+router.post('/admin/login', async (req, res) => {
+  try {
+    const client = await getClient();
+    const hash = await getAdminPasswordHash(client);
+    if (!hash) {
+      return res.status(412).json({
+        error: 'لم يتم إعداد كلمة مرور بعد. افتح /api/admin/setup لتوليد واحدة.',
+        code: 'ADMIN_NOT_CONFIGURED'
+      });
+    }
+    const { password } = req.body || {};
+    if (password && (await bcrypt.compare(String(password), hash))) {
+      return res.json({ ok: true });
+    }
+    res.status(401).json({ error: 'Invalid admin password' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Login check failed' });
   }
-  const { password } = req.body || {};
-  if (password === process.env.ADMIN_PASSWORD) return res.json({ ok: true });
-  res.status(401).json({ error: 'Invalid admin password' });
 });
 
 // ---------------------------------------------------------------------
