@@ -18,8 +18,39 @@
 
 <div id="topLoadingBar" class="top-loading-bar"></div>
 
+<!-- First-time setup: no admin password exists yet -->
+<div id="setupScreen" class="login-screen d-none">
+  <div class="login-card">
+    <div class="login-icon"><i class="bi bi-key-fill"></i></div>
+    <h4 class="mb-2">إعداد لوحة التحكم لأول مرة</h4>
+    <p class="text-muted small mb-3">لا توجد كلمة مرور بعد. اضغط الزر لتوليد كلمة مرور عشوائية وحفظها مباشرة في قاعدة البيانات.</p>
+
+    <div id="setupBeforeGenerate">
+      <button type="button" id="generatePasswordBtn" class="btn btn-success w-100 fw-bold">
+        <i class="bi bi-magic"></i> توليد كلمة مرور الآن
+      </button>
+    </div>
+
+    <div id="setupAfterGenerate" class="d-none text-start">
+      <div class="alert alert-warning small mb-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        احفظ كلمة المرور هذه الآن — لن تظهر مرة أخرى أبداً!
+      </div>
+      <div class="input-group mb-3">
+        <input type="text" id="generatedPasswordDisplay" class="form-control text-center fw-bold" readonly>
+        <button type="button" id="copyGeneratedPasswordBtn" class="btn btn-outline-secondary" title="نسخ">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      <button type="button" id="continueToLoginBtn" class="btn btn-primary w-100 fw-bold">
+        <i class="bi bi-box-arrow-in-left"></i> تسجيل الدخول الآن
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Login gate -->
-<div id="loginScreen" class="login-screen">
+<div id="loginScreen" class="login-screen d-none">
   <div class="login-card">
     <div class="login-icon"><i class="bi bi-shield-lock"></i></div>
     <h4 class="mb-3">دخول لوحة التحكم</h4>
@@ -31,6 +62,32 @@
       <div id="loginError" class="text-danger small mt-2 d-none">كلمة المرور غير صحيحة.</div>
     </form>
     <a href="index.html" class="d-block text-center mt-3 small">&larr; العودة إلى المتجر</a>
+  </div>
+</div>
+
+<!-- New password shown once after regenerating from inside the panel -->
+<div class="modal fade" id="newPasswordModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content tactical-modal">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-key-fill"></i> كلمة المرور الجديدة</h5>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning small mb-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          احفظ كلمة المرور هذه الآن — لن تظهر مرة أخرى، وستحتاجها لتسجيل الدخول لاحقاً.
+        </div>
+        <div class="input-group">
+          <input type="text" id="newPasswordDisplay" class="form-control text-center fw-bold" readonly>
+          <button type="button" id="copyNewPasswordBtn" class="btn btn-outline-secondary" title="نسخ">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success fw-bold" id="closeNewPasswordModalBtn">تم الحفظ، إغلاق</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -47,6 +104,9 @@
         <a class="btn btn-outline-light btn-sm" href="index.html" target="_blank">
           <i class="bi bi-shop"></i> عرض المتجر
         </a>
+        <button class="btn btn-outline-warning btn-sm" id="regeneratePasswordBtn" type="button">
+          <i class="bi bi-key"></i> توليد كلمة مرور جديدة
+        </button>
         <button class="btn btn-outline-danger btn-sm" id="logoutBtn" type="button">
           <i class="bi bi-box-arrow-right"></i> خروج
         </button>
@@ -137,11 +197,11 @@
 
           <div class="row g-2">
             <div class="col-6">
-              <label class="form-label"><i class="bi bi-gem"></i> عدد الجواهر</label>
+              <label class="form-label"><img src="assets/gems-icon.png" alt="" class="stat-icon"> عدد الجواهر</label>
               <input type="number" min="0" class="form-control" id="gemsInput" placeholder="0" required>
             </div>
             <div class="col-6">
-              <label class="form-label"><i class="bi bi-coin"></i> عدد الشظايا الذهبية</label>
+              <label class="form-label"><img src="assets/shards-icon.png" alt="" class="stat-icon"> عدد الشظايا الذهبية</label>
               <input type="number" min="0" class="form-control" id="goldBarsInput" placeholder="0" required>
             </div>
           </div>

@@ -268,6 +268,14 @@ body::before {
 }
 .stat-gems { background: rgba(77, 163, 255, 0.15); color: var(--accent-blue); }
 .stat-gold { background: rgba(255, 197, 66, 0.15); color: var(--accent-gold); }
+.stat-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-inline-end: 0.3rem;
+}
 
 .price-list {
   border: 1px solid var(--border-subtle);

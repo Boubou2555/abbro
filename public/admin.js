@@ -4,6 +4,9 @@
 
 const API_BASE = '/api/admin/accounts';
 const LOGIN_URL = '/api/admin/login';
+const SETUP_STATUS_URL = '/api/admin/setup-status';
+const SETUP_URL = '/api/admin/setup';
+const REGENERATE_PASSWORD_URL = '/api/admin/regenerate-password';
 const PASSWORD_STORAGE_KEY = 'store_admin_password';
 
 // ---------------------------------------------------------------------
@@ -19,11 +22,25 @@ let uploadedImageData = null;
 // DOM refs
 // ---------------------------------------------------------------------
 const el = (id) => document.getElementById(id);
+const setupScreen = el('setupScreen');
 const loginScreen = el('loginScreen');
 const adminPanel = el('adminPanel');
 const loginForm = el('loginForm');
 const loginPasswordInput = el('loginPasswordInput');
 const loginError = el('loginError');
+
+const setupBeforeGenerate = el('setupBeforeGenerate');
+const setupAfterGenerate = el('setupAfterGenerate');
+const generatePasswordBtn = el('generatePasswordBtn');
+const generatedPasswordDisplay = el('generatedPasswordDisplay');
+const copyGeneratedPasswordBtn = el('copyGeneratedPasswordBtn');
+const continueToLoginBtn = el('continueToLoginBtn');
+
+const regeneratePasswordBtn = el('regeneratePasswordBtn');
+const newPasswordModalEl = el('newPasswordModal');
+const newPasswordDisplay = el('newPasswordDisplay');
+const copyNewPasswordBtn = el('copyNewPasswordBtn');
+const closeNewPasswordModalBtn = el('closeNewPasswordModalBtn');
 
 const accountsContainer = el('accountsContainer');
 const emptyState = el('emptyState');
@@ -37,6 +54,7 @@ const itemModalEl = el('itemModal');
 const deleteModalEl = el('deleteModal');
 const itemModal = new bootstrap.Modal(itemModalEl);
 const deleteModal = new bootstrap.Modal(deleteModalEl);
+const newPasswordModal = new bootstrap.Modal(newPasswordModalEl);
 
 const itemForm = el('itemForm');
 const titleInput = el('titleInput');
@@ -115,6 +133,17 @@ function formatMoney(n) {
 // Auth
 // =====================================================================
 async function tryAutoLogin() {
+  let configured = true;
+  try {
+    const res = await fetch(SETUP_STATUS_URL);
+    const data = await res.json();
+    configured = !!data.configured;
+  } catch (err) {
+    console.error(err);
+  }
+
+  if (!configured) return showSetup();
+
   const saved = getStoredPassword();
   if (!saved) return showLogin();
   const ok = await checkPassword(saved);
@@ -136,14 +165,27 @@ async function checkPassword(password) {
   }
 }
 
-function showLogin() {
-  loginScreen.classList.remove('d-none');
+function hideAllScreens() {
+  setupScreen.classList.add('d-none');
+  loginScreen.classList.add('d-none');
   adminPanel.classList.add('d-none');
+}
+
+function showSetup() {
+  hideAllScreens();
+  setupScreen.classList.remove('d-none');
+  setupBeforeGenerate.classList.remove('d-none');
+  setupAfterGenerate.classList.add('d-none');
+}
+
+function showLogin() {
+  hideAllScreens();
+  loginScreen.classList.remove('d-none');
   setTimeout(() => loginPasswordInput.focus(), 100);
 }
 
 function showPanel() {
-  loginScreen.classList.add('d-none');
+  hideAllScreens();
   adminPanel.classList.remove('d-none');
   fetchAccounts();
 }
@@ -167,6 +209,78 @@ loginForm.addEventListener('submit', async (e) => {
 el('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem(PASSWORD_STORAGE_KEY);
   showLogin();
+});
+
+// ---------------------------------------------------------------------
+// First-time setup: generate a random password, stored (hashed) in the
+// database. Shown only once, then the user must log in normally.
+// ---------------------------------------------------------------------
+let lastGeneratedPassword = '';
+
+generatePasswordBtn.addEventListener('click', async () => {
+  await withButtonLoading(generatePasswordBtn, 'جارٍ التوليد...', async () => {
+    try {
+      const res = await fetch(SETUP_URL, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(data.error || 'فشل توليد كلمة المرور');
+        if (data.code === 'ALREADY_CONFIGURED') showLogin();
+        return;
+      }
+      lastGeneratedPassword = data.password;
+      generatedPasswordDisplay.value = data.password;
+      setupBeforeGenerate.classList.add('d-none');
+      setupAfterGenerate.classList.remove('d-none');
+    } catch (err) {
+      console.error(err);
+      showToast('تعذر الاتصال بالخادم');
+    }
+  });
+});
+
+copyGeneratedPasswordBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(lastGeneratedPassword);
+    showToast('تم نسخ كلمة المرور');
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+continueToLoginBtn.addEventListener('click', () => {
+  loginPasswordInput.value = lastGeneratedPassword;
+  showLogin();
+});
+
+// ---------------------------------------------------------------------
+// Regenerate password from inside the already-logged-in panel.
+// ---------------------------------------------------------------------
+regeneratePasswordBtn.addEventListener('click', async () => {
+  if (!confirm('سيتم إنشاء كلمة مرور جديدة وإلغاء القديمة نهائياً. هل تريد المتابعة؟')) return;
+  await withButtonLoading(regeneratePasswordBtn, 'جارٍ التوليد...', async () => {
+    try {
+      const newPassword = await apiRequest(REGENERATE_PASSWORD_URL, { method: 'POST' });
+      localStorage.setItem(PASSWORD_STORAGE_KEY, newPassword.password);
+      newPasswordDisplay.value = newPassword.password;
+      newPasswordModal.show();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'فشل توليد كلمة مرور جديدة');
+    }
+  });
+});
+
+copyNewPasswordBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(newPasswordDisplay.value);
+    showToast('تم نسخ كلمة المرور');
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+closeNewPasswordModalBtn.addEventListener('click', () => {
+  newPasswordModal.hide();
 });
 
 // =====================================================================
@@ -247,8 +361,8 @@ function accountCardHtml(acc, idx) {
         <div class="account-card-title">${escapeHtml(title)}</div>
 
         <div class="account-stats">
-          <div class="stat-pill stat-gems"><i class="bi bi-gem"></i><span>${formatNumber(acc.gems)}</span></div>
-          <div class="stat-pill stat-gold"><i class="bi bi-coin"></i><span>${formatNumber(acc.gold_bars)}</span></div>
+          <div class="stat-pill stat-gems"><img src="assets/gems-icon.png" alt="جواهر" class="stat-icon"><span>${formatNumber(acc.gems)}</span></div>
+          <div class="stat-pill stat-gold"><img src="assets/shards-icon.png" alt="شظايا" class="stat-icon"><span>${formatNumber(acc.gold_bars)}</span></div>
         </div>
 
         <div class="price-list">

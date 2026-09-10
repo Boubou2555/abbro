@@ -163,11 +163,11 @@ function accountCardHtml(acc, idx) {
 
         <div class="account-stats">
           <div class="stat-pill stat-gems">
-            <i class="bi bi-gem"></i>
+            <img src="assets/gems-icon.png" alt="جواهر" class="stat-icon">
             <span>${formatNumber(acc.gems)}</span>
           </div>
           <div class="stat-pill stat-gold">
-            <i class="bi bi-coin"></i>
+            <img src="assets/shards-icon.png" alt="شظايا" class="stat-icon">
             <span>${formatNumber(acc.gold_bars)}</span>
           </div>
         </div>
@@ -249,8 +249,8 @@ function openDetailModal(acc) {
     <img src="${escapeHtml(img)}" class="detail-modal-img mb-3" alt=""
          onerror="this.src='${PLACEHOLDER_IMG}'">
     <div class="account-stats mb-3">
-      <div class="stat-pill stat-gems"><i class="bi bi-gem"></i><span>${formatNumber(acc.gems)}</span></div>
-      <div class="stat-pill stat-gold"><i class="bi bi-coin"></i><span>${formatNumber(acc.gold_bars)}</span></div>
+      <div class="stat-pill stat-gems"><img src="assets/gems-icon.png" alt="جواهر" class="stat-icon"><span>${formatNumber(acc.gems)}</span></div>
+      <div class="stat-pill stat-gold"><img src="assets/shards-icon.png" alt="شظايا" class="stat-icon"><span>${formatNumber(acc.gold_bars)}</span></div>
     </div>
     <div class="price-list mb-3">
       <div class="price-row"><span class="price-label"><i class="bi bi-currency-dollar"></i> دولار</span><span class="price-value">$${formatMoney(acc.price_usd)}</span></div>
