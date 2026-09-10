@@ -95,7 +95,7 @@ function escapeHtml(str) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
-const PLACEHOLDER_IMG = 'https://placehold.co/400x400/1a1a1a/777?text=No+Image';
+const PLACEHOLDER_IMG = 'https://placehold.co/160x160/f2f2f7/9a9aa0?text=%3F';
 
 async function copyCode(code) {
   const text = String(code || '');
@@ -112,7 +112,7 @@ async function copyCode(code) {
     document.execCommand('copy');
     document.body.removeChild(tmp);
   }
-  showToast(`تم نسخ الكود: ${text}`);
+  showToast('تم نسخ الكود ✅ الصقه وأرسله لنا لإتمام الشراء');
 }
 
 // ---------------------------------------------------------------------
@@ -151,49 +151,32 @@ function getFilteredAccounts() {
 function accountCardHtml(acc, idx) {
   const img = acc.image_url || PLACEHOLDER_IMG;
   const title = acc.title || `حساب #${acc.id}`;
+  const isSold = acc.status === 'sold';
 
   return `
-    <div class="account-card" style="animation-delay:${Math.min(idx, 12) * 30}ms" data-id="${acc.id}">
-      <div class="account-card-img">
-        <img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" loading="lazy"
+    <div class="acc-row${isSold ? ' is-sold' : ''}" style="animation-delay:${Math.min(idx, 12) * 25}ms" data-id="${acc.id}">
+      <div class="acc-thumb-wrap">
+        <img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" class="acc-thumb" loading="lazy"
              onerror="this.src='${PLACEHOLDER_IMG}'">
+        ${isSold ? '<span class="acc-sold-badge">مباع</span>' : ''}
       </div>
-      <div class="account-card-body">
-        <div class="account-card-title">${escapeHtml(title)}</div>
 
-        <div class="account-stats">
-          <div class="stat-pill stat-gems">
-            <img src="assets/gems-icon.png" alt="جواهر" class="stat-icon">
-            <span>${formatNumber(acc.gems)}</span>
-          </div>
-          <div class="stat-pill stat-gold">
-            <img src="assets/shards-icon.png" alt="شظايا" class="stat-icon">
-            <span>${formatNumber(acc.gold_bars)}</span>
-          </div>
+      <div class="acc-info">
+        <div class="acc-title">${escapeHtml(title)}</div>
+        <div class="acc-chips">
+          <span class="acc-chip"><img src="assets/gems-icon.png" alt="" class="stat-icon">${formatNumber(acc.gems)}</span>
+          <span class="acc-chip"><img src="assets/shards-icon.png" alt="" class="stat-icon">${formatNumber(acc.gold_bars)}</span>
         </div>
-
-        <div class="price-list">
-          <div class="price-row">
-            <span class="price-label"><i class="bi bi-currency-dollar"></i> دولار</span>
-            <span class="price-value">$${formatMoney(acc.price_usd)}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label"><i class="bi bi-phone"></i> فليكسي</span>
-            <span class="price-value">${formatMoney(acc.price_flexy)} دج</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label"><i class="bi bi-bank"></i> بريدي موب</span>
-            <span class="price-value">${formatMoney(acc.price_baridimob)} دج</span>
-          </div>
+        <div class="acc-chips">
+          <span class="acc-chip price-chip">$${formatMoney(acc.price_usd)}</span>
+          <span class="acc-chip price-chip">${formatMoney(acc.price_flexy)} دج فليكسي</span>
+          <span class="acc-chip price-chip">${formatMoney(acc.price_baridimob)} دج بريدي</span>
         </div>
+      </div>
 
-        <div class="code-row">
-          <span class="code-label">الكود</span>
-          <span class="code-value">${escapeHtml(acc.code)}</span>
-        </div>
-
-        <button class="btn btn-success w-100 fw-bold copy-code-btn" data-action="copy" data-code="${escapeHtml(acc.code)}">
-          <i class="bi bi-clipboard-check"></i> نسخ الكود
+      <div class="acc-trailing">
+        <button class="ios-copy-btn" data-action="copy" data-code="${escapeHtml(acc.code)}" title="نسخ" ${isSold ? 'disabled' : ''}>
+          <i class="bi bi-clipboard-check"></i>
         </button>
       </div>
     </div>
@@ -231,12 +214,15 @@ let activeDetailAccount = null;
 accountsContainer.addEventListener('click', (e) => {
   const copyBtn = e.target.closest('button[data-action="copy"]');
   if (copyBtn) {
+    e.stopPropagation();
     copyCode(copyBtn.getAttribute('data-code'));
+    copyBtn.classList.add('is-copied');
+    setTimeout(() => copyBtn.classList.remove('is-copied'), 1200);
     return;
   }
-  const card = e.target.closest('.account-card');
-  if (card) {
-    const acc = accounts.find((a) => Number(a.id) === Number(card.getAttribute('data-id')));
+  const row = e.target.closest('.acc-row');
+  if (row) {
+    const acc = accounts.find((a) => Number(a.id) === Number(row.getAttribute('data-id')));
     if (acc) openDetailModal(acc);
   }
 });
@@ -248,20 +234,16 @@ function openDetailModal(acc) {
   el('detailModalBody').innerHTML = `
     <img src="${escapeHtml(img)}" class="detail-modal-img mb-3" alt=""
          onerror="this.src='${PLACEHOLDER_IMG}'">
-    <div class="account-stats mb-3">
-      <div class="stat-pill stat-gems"><img src="assets/gems-icon.png" alt="جواهر" class="stat-icon"><span>${formatNumber(acc.gems)}</span></div>
-      <div class="stat-pill stat-gold"><img src="assets/shards-icon.png" alt="شظايا" class="stat-icon"><span>${formatNumber(acc.gold_bars)}</span></div>
+    <div class="acc-chips mb-2">
+      <span class="acc-chip"><img src="assets/gems-icon.png" alt="" class="stat-icon">${formatNumber(acc.gems)}</span>
+      <span class="acc-chip"><img src="assets/shards-icon.png" alt="" class="stat-icon">${formatNumber(acc.gold_bars)}</span>
     </div>
-    <div class="price-list mb-3">
-      <div class="price-row"><span class="price-label"><i class="bi bi-currency-dollar"></i> دولار</span><span class="price-value">$${formatMoney(acc.price_usd)}</span></div>
-      <div class="price-row"><span class="price-label"><i class="bi bi-phone"></i> فليكسي</span><span class="price-value">${formatMoney(acc.price_flexy)} دج</span></div>
-      <div class="price-row"><span class="price-label"><i class="bi bi-bank"></i> بريدي موب</span><span class="price-value">${formatMoney(acc.price_baridimob)} دج</span></div>
+    <div class="acc-chips mb-2">
+      <span class="acc-chip price-chip">$${formatMoney(acc.price_usd)}</span>
+      <span class="acc-chip price-chip">${formatMoney(acc.price_flexy)} دج فليكسي</span>
+      <span class="acc-chip price-chip">${formatMoney(acc.price_baridimob)} دج بريدي موب</span>
     </div>
     ${acc.note ? `<p class="text-muted mb-0">${escapeHtml(acc.note)}</p>` : ''}
-    <div class="code-row mt-3">
-      <span class="code-label">الكود</span>
-      <span class="code-value">${escapeHtml(acc.code)}</span>
-    </div>
   `;
   detailModal.show();
 }
